@@ -1,0 +1,14 @@
+{
+    "p": 113,
+    "epochs": 5000,
+    "batch_size": 512,
+    "lr": 1e-3,
+    "weight_decay": 1.0,
+    "d_model": 128,
+    "n_layers": 1,
+    "n_heads": 4,
+    "seed": 42,
+    "dataset": "modular",
+    "matrix_p": 4,
+    "matrix_n": 2
+}

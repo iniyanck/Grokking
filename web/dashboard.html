@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Grokking Dashboard</title>
+    <link rel="stylesheet" href="web/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+
+        .card {
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #bb86fc;
+            font-size: 1.5em;
+        }
+
+        .card p {
+            color: #aaa;
+            flex-grow: 1;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            text-align: center;
+            flex: 1;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #444;
+        }
+
+        .btn-primary {
+            background: #03dac6;
+            color: black;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #018786;
+        }
+
+        .status-widget {
+            background: #252526;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" style="width: 100%; max-width: 100%; box-shadow: none; background: transparent;">
+        <h1>Grokking Experiments Dashboard</h1>
+
+        <!-- Training Control -->
+        <div class="card status-widget" style="width: 90%; max-width: 1200px; margin: 0 auto;">
+            <h2>Training Control Center</h2>
+            <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+
+                <!-- Form -->
+                <div style="flex: 1; min-width: 300px;">
+                    <div class="form-group">
+                        <label>Dataset</label>
+                        <select id="train-dataset">
+                            <option value="date">Date to Day-of-Week</option>
+                            <option value="tictactoe">Tic-Tac-Toe</option>
+                            <option value="gol">Game of Life</option>
+                            <option value="modular">Modular Addition</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: flex; gap: 10px;">
+                        <div style="flex:1;">
+                            <label>Epochs</label>
+                            <input type="number" id="train-epochs" value="1000">
+                        </div>
+                        <div style="flex:1;">
+                            <label>Learning Rate</label>
+                            <input type="number" id="train-lr" value="0.001" step="0.0001">
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="startTraining()">Start Training</button>
+                        <button class="btn" style="background: #cf6679; color:black;"
+                            onclick="stopTraining()">Stop</button>
+                    </div>
+                    <div id="status-msg" style="margin-top: 10px; color: #03dac6;"></div>
+                </div>
+
+                <!-- Graph -->
+                <div style="flex: 1; min-width: 300px; height: 250px;">
+                    <canvas id="trainingChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Experiments Grid -->
+        <div class="grid-layout">
+            <!-- Card 1: Date -->
+            <div class="card">
+                <h2>📅 Date Wizard</h2>
+                <p>Predict the day of the week from any date between 1900 and 2100. Tests ability to handle modular
+                    arithmetic with irregularities.</p>
+                <div class="btn-group">
+                    <a href="/web/date.html" class="btn btn-primary">Launch Experiment</a>
+                </div>
+            </div>
+
+            <!-- Card 2: Tic Tac Toe -->
+            <div class="card">
+                <h2>❌⭕ Tic-Tac-Toe</h2>
+                <p>Predict the winner of a game from the board state. Tests understanding of spatial symmetries and game
+                    rules.</p>
+                <div class="btn-group">
+                    <a href="/web/tictactoe.html" class="btn btn-primary">Launch Experiment</a>
+                </div>
+            </div>
+
+            <!-- Card 3: Game of Life -->
+            <div class="card">
+                <h2>👾 Game of Life</h2>
+                <p>Predict cellular automata evolution. Tests ability to learn local convolution rules.</p>
+                <div class="btn-group">
+                    <a href="/web/gol.html" class="btn btn-primary">Launch Experiment</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chartCtx = document.getElementById('trainingChart').getContext('2d');
+        let chart = new Chart(chartCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Train Acc',
+                    borderColor: '#03dac6',
+                    data: []
+                }, {
+                    label: 'Val Acc',
+                    borderColor: '#bb86fc',
+                    data: []
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                },
+                animation: false
+            }
+        });
+
+        async function startTraining() {
+            const dataset = document.getElementById('train-dataset').value;
+            const epochs = document.getElementById('train-epochs').value;
+            const lr = document.getElementById('train-lr').value;
+
+            const res = await fetch('/api/train', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dataset, epochs, lr })
+            });
+            const data = await res.json();
+            if (data.status === 'started') {
+                document.getElementById('status-msg').innerText = "Training Started (PID: " + data.pid + ")";
+            } else {
+                document.getElementById('status-msg').innerText = "Error: " + data.message;
+            }
+        }
+
+        async function stopTraining() {
+            await fetch('/api/stop', { method: 'POST' });
+            document.getElementById('status-msg').innerText = "Training Stopped";
+        }
+
+        async function updateStatus() {
+            const res = await fetch('/api/status');
+            const data = await res.json();
+
+            if (data.history && data.history.step) {
+                // Update chart
+                chart.data.labels = data.history.step;
+                chart.data.datasets[0].data = data.history.train_acc;
+                chart.data.datasets[1].data = data.history.val_acc;
+                chart.update();
+            }
+
+            if (data.is_running) {
+                document.getElementById('status-msg').innerText = "Training Running...";
+            } else if (document.getElementById('status-msg').innerText === "Training Running...") {
+                document.getElementById('status-msg').innerText = "Training Finished";
+            }
+        }
+
+        // Poll status
+        setInterval(updateStatus, 1000);
+        updateStatus(); // Initial call
+
+        // Load initial config
+        fetch('/api/config').then(r => r.json()).then(config => {
+            if (config.dataset) document.getElementById('train-dataset').value = config.dataset;
+            if (config.epochs) document.getElementById('train-epochs').value = config.epochs;
+            if (config.lr) document.getElementById('train-lr').value = config.lr;
+        });
+    </script>
+</body>
+
+</html>

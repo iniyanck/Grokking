@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Grokking Date Prediction</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+    <style>
+        .calendar-box {
+            background: #252526;
+            padding: 30px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        input[type="date"] {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .result-box {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .day-card {
+            width: 120px;
+            height: 120px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #444;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .day-big {
+            font-size: 32px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .correct {
+            border-color: #03dac6;
+            background: rgba(3, 218, 198, 0.1);
+            color: #03dac6;
+        }
+
+        .incorrect {
+            border-color: #cf6679;
+            background: rgba(207, 102, 121, 0.1);
+            color: #cf6679;
+        }
+
+        .neutral {
+            border-color: #bb86fc;
+            color: #bb86fc;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Date to Day-of-Week</h1>
+        <p style="color: #aaa;">Enter a date. The model attempts to "grok" the calendar rules to predict the day.</p>
+
+        <div class="calendar-box">
+            <input type="date" id="dateInput" value="2024-01-01" min="1900-01-01" max="2100-12-31">
+            <br>
+            <button onclick="predict()">Predict Day</button>
+
+            <div class="result-box">
+                <div class="day-card" id="card-model">
+                    <span>Model</span>
+                    <span class="day-big" id="day-model">?</span>
+                    <span style="font-size:12px; margin-top:5px;" id="conf-model"></span>
+                </div>
+
+                <div class="day-card" id="card-actual">
+                    <span>Actual</span>
+                    <span class="day-big" id="day-actual">?</span>
+                </div>
+            </div>
+
+            <div id="status" style="margin-top: 20px; font-size: 12px; color: #666;">Loading Model...</div>
+        </div>
+
+        <button onclick="window.location.href='/'" style="background:#333; margin-top:30px;">Back to Dashboard</button>
+    </div>
+    <script src="date.js"></script>
+</body>
+
+</html>

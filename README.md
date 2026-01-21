@@ -71,3 +71,25 @@ python src/plot.py
 ```
 
 This will generate `results/grokking_plot.png`, showing Training vs. Validation Accuracy over time. The x-axis is log-scaled to better visualize the "grokking" phase transition.
+
+## Web Interface
+
+The project includes a unified web interface to manage experiments and visualize results.
+
+1.  **Start the Server**:
+    ```bash
+    python src/app.py
+    ```
+    This will start the Flask server at `http://localhost:5000`.
+
+2.  **Dashboard**:
+    Open `http://localhost:5000` in your browser. The dashboard allows you to:
+    -   Configure training parameters (dataset, epochs, learning rate, etc.).
+    -   Start and stop training processes.
+    -   Monitor training progress in real-time.
+    -   Navigate to specific experiment visualizations (e.g., Date, Game of Life).
+
+3.  **Visualizations**:
+    -   **Date Experiment**: `http://localhost:5000/web/date.html`
+    -   **Game of Life**: `http://localhost:5000/web/gol.html`
+    -   **Tic Tac Toe**: `http://localhost:5000/web/tictactoe.html`

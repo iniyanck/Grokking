@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from data import ModularAdditionDataset, PermutationDataset, MatrixDataset
+from data import ModularAdditionDataset, PermutationDataset, MatrixDataset, DateDataset, TicTacToeDataset, GameOfLifeDataset
 from model import SimpleTransformer
 import argparse
 import time
@@ -55,7 +55,7 @@ def train():
     parser.add_argument('--n_heads', type=int, default=defaults['n_heads'])
     parser.add_argument('--seed', type=int, default=defaults['seed'])
     
-    parser.add_argument('--dataset', type=str, default=defaults['dataset'], choices=['modular', 'permutation', 'matrix'])
+    parser.add_argument('--dataset', type=str, default=defaults['dataset'], choices=['modular', 'permutation', 'matrix', 'date', 'tictactoe', 'gol'])
     parser.add_argument('--matrix_p', type=int, default=defaults['matrix_p'], help='Modulus for matrix elements')
     parser.add_argument('--matrix_n', type=int, default=defaults['matrix_n'], help='Dimension of square matrix')
     
@@ -79,13 +79,32 @@ def train():
         train_dataset = MatrixDataset(p=args.matrix_p, n=args.matrix_n, split='train', train_fraction=0.5, seed=args.seed)
         val_dataset = MatrixDataset(p=args.matrix_p, n=args.matrix_n, split='val', train_fraction=0.5, seed=args.seed)
         vocab_size = train_dataset.cardinality
+    elif args.dataset == 'date':
+        train_dataset = DateDataset(split='train', train_fraction=0.5, seed=args.seed)
+        val_dataset = DateDataset(split='val', train_fraction=0.5, seed=args.seed)
+        vocab_size = 2200 # efficient enough covers years up to 2100
+    elif args.dataset == 'tictactoe':
+        train_dataset = TicTacToeDataset(split='train', train_fraction=0.5, seed=args.seed)
+        val_dataset = TicTacToeDataset(split='val', train_fraction=0.5, seed=args.seed)
+        vocab_size = 3 # 0, 1, 2
+    elif args.dataset == 'gol':
+        train_dataset = GameOfLifeDataset(split='train', train_fraction=0.5, seed=args.seed)
+        val_dataset = GameOfLifeDataset(split='val', train_fraction=0.5, seed=args.seed)
+        vocab_size = 2 # 0, 1
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=len(val_dataset), shuffle=False) # Full batch for val
     
     # Model
+    
+    # Determine max_len from dataset
+    # Get one sample to check length
+    sample_x, _ = train_dataset[0]
+    max_len = sample_x.size(0)
+    print(f"Dataset {args.dataset}: vocab_size={vocab_size}, max_len={max_len}")
+
     model = SimpleTransformer(vocab_size=vocab_size, d_model=args.d_model, 
-                              n_head=args.n_heads, n_layers=args.n_layers, max_len=2)
+                              n_head=args.n_heads, n_layers=args.n_layers, max_len=max_len)
     model.to(device)
     
     criterion = nn.CrossEntropyLoss()
@@ -150,6 +169,14 @@ def train():
     model_path = f'results/model_{args.dataset}_p{args.p}.pt'
     torch.save(model.state_dict(), model_path)
     print(f"Model saved to {model_path}")
+
+    # Export to ONNX
+    onnx_path = f'results/model_{args.dataset}.onnx'
+    dummy_input = torch.randint(0, vocab_size, (1, max_len)).to(device)
+    torch.onnx.export(model, dummy_input, onnx_path, 
+                      input_names=['input'], output_names=['output'], 
+                      dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}})
+    print(f"Model exported to {onnx_path}")
         
     print(f"Training finished in {time.time() - start_time:.2f}s")
 
